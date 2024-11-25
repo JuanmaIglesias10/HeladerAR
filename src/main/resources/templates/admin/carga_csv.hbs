@@ -1,0 +1,147 @@
+{{#partial "archivo_css"}}
+    <link rel="stylesheet" href="../../../css/dashboard.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+          integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+          crossorigin=""/>
+{{/partial}}
+
+{{#partial "contenido"}}
+    <div class="container-fluid">
+        <div id="identification" class="d-flex align-items-center fs-1 mt-4">
+            <div class="ms-5 mt-3 mb-4 d-flex">
+                <h3>Carga masiva de colaboraciones CSV</h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="container-fluid d-flex flex-column align-items-center justify-content-center text-center" style="margin-top: -1rem; width: 100rem">
+        <h4 class="mb-4">El formato del archivo debe ser el siguiente:</h4>
+        <div class="d-flex justify-content-center">
+            <img src="../../../img/tablaFormatoCSV.png" alt="Formato de tabla CSV">
+        </div>
+        <div class="container">
+            <div id="file-name" class="mt-3"></div>
+            <div class="progress mt-3 w-100">
+                <div id="progress-bar" class="progress-bar" role="progressbar" style="background-color: #2D9BF0; width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+            </div>
+            <div class="form-group mt-4">
+                <label for="fileUpload" class="custom-file-upload">Cargar un archivo .CSV</label>
+                <input type="file" id="fileUpload" class="file-input" accept=".csv" required>
+            </div>
+            <div id="message-container" class="mt-3"></div>
+            <div class="container mt-4">
+                <button id="download-example" type="button" class="btn btn-outline-primary">Descargar archivo de ejemplo</button>
+            </div>
+            <div class="container mt-4">
+                <button id="save-csv" type="button" class="btn btn-primary" style="color: #f8f9fa" disabled>Guardar</button>
+            </div>
+            <div id="loading-spinner" class="spinner-border text-primary mt-4" role="status" style="display: none;">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+        </div>
+    </div>
+{{/partial}}
+
+{{#partial 'scripts'}}
+    <script>
+        document.getElementById('download-example').addEventListener('click', async function() {
+            const url = '/dashboard/contribuciones/archivo_de_ejemplo';
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'text/csv',
+                },
+            });
+            if (!response.ok) throw new Error('Error al descargar el archivo de ejemplo');
+            const blob = await response.blob();
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'archivo_de_ejemplo.csv';
+            link.click();
+        });
+
+        document.getElementById('fileUpload').addEventListener('change', function() {
+            const fileInput = document.getElementById('fileUpload');
+            const file = fileInput.files[0];
+            const fileNameContainer = document.getElementById('file-name');
+            const progressBar = document.getElementById('progress-bar');
+            const saveButton = document.getElementById('save-csv');
+
+            if (file) {
+                fileNameContainer.textContent = `Archivo: ${file.name}`;
+                progressBar.style.width = '100%';
+                progressBar.textContent = '100%';
+                progressBar.style.display = 'block';
+                saveButton.disabled = false;
+            } else {
+                saveButton.disabled = true;
+            }
+        });
+
+        document.getElementById('save-csv').addEventListener('click', function() {
+            const fileInput = document.getElementById('fileUpload');
+            const file = fileInput.files[0];
+            const messageContainer = document.getElementById('message-container');
+            const progressBar = document.getElementById('progress-bar');
+            const loadingSpinner = document.getElementById('loading-spinner');
+
+            if (!file) {
+                messageContainer.textContent = 'Por favor, cargue un archivo CSV.';
+                messageContainer.style.color = 'red';
+                return;
+            }
+
+            if (file.type !== 'text/csv') {
+                messageContainer.textContent = 'El archivo debe ser un CSV.';
+                messageContainer.style.color = 'red';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const lines = event.target.result.split('\n').map(line => line.trim().split(';'));
+                const pattern = /^(LE|LC|DNI);\d+;[^;]+;[^;]+;[^;]+@[^;]+;\d{2}\/\d{2}\/\d{4};(DONACION_VIANDAS|ENTREGA_TARJETAS|REDISTRIBUCION_VIANDAS|DINERO);\d+$/;
+                let valid = true;
+
+                for (const line of lines) {
+                    if (!pattern.test(line.join(';'))) {
+                        valid = false;
+                        break;
+                    }
+                }
+
+                if (!valid) {
+                    messageContainer.textContent = 'El formato es inválido, por favor inténtelo nuevamente.';
+                    messageContainer.style.color = 'red';
+                    loadingSpinner.style.display = 'none';
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', '/dashboard/contribuciones/csv', true);
+
+                xhr.onload = function() {
+                    loadingSpinner.style.display = 'none';
+                    const response = JSON.parse(xhr.responseText);
+                    if (!response.valid) {
+                        messageContainer.textContent = 'El formato es inválido, por favor inténtelo nuevamente.';
+                        messageContainer.style.color = 'red';
+                    } else {
+                        messageContainer.textContent = 'Archivo cargado exitosamente.';
+                        messageContainer.style.color = 'green';
+                    }
+                }
+
+                xhr.send(formData);
+            };
+
+            reader.readAsText(file);
+            loadingSpinner.style.display = 'block';
+        });
+    </script>
+{{/partial}}
+
+{{> templates/bases/base_admin}}

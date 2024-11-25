@@ -1,0 +1,117 @@
+{{#partial "archivo_css"}}
+    <link rel="stylesheet" href="../../../css/index.css">
+{{/partial}}
+{{#partial "contenido"}}
+
+    <div class="container-fluid justify-content-center align-items-center">
+        <div id="identification" class="conteiner d-flex">
+            <div class="ms-5 mt-3 mb-4">
+                <h3>Registrar menor vulnerable ({{cantidadDePantallasMostradas}} de {{cantidadDePantallasAMostrar}})</h3>
+                <p>Los campos marcados con * son obligatorios.</p>
+            </div>
+        </div>
+        <form method="POST" action="/dashboard/registrar_menor_vulnerable">
+            <div class="row">
+                <div class="container">
+                    <div class="col">
+                        <div class="container" style="margin-left: -5rem">
+                            <div class="form-group">
+                                <label for="nombre">Nombre *</label>
+                                <input type="text" id="nombre" name="nombre" placeholder="Nombre" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="apellido">Apellido *</label>
+                                <input type="text" id="apellido" name="apellido" placeholder="Apellido" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="fechaNacimiento">Fecha de Nacimiento *</label>
+                                <input type="date" id="fechaNacimiento" name="fechaNacimiento" placeholder="Fecha de Nacimiento" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="calle">Dirección: Calle</label>
+                                <input type="text" id="calle" name="calle" placeholder="Calle">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="altura">Dirección: Altura</label>
+                                <input type="number" id="altura" name="altura" placeholder="Altura">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="container">
+                    <div class="col">
+                        <div class="container" style="margin-left: -5rem">
+                            <div class="form-group">
+                                <label for="piso">Dirección: Piso</label>
+                                <input type="number" id="piso" name="piso" placeholder="Piso">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="codigoPostal">Dirección: Código Postal</label>
+                                <input type="number" id="codigoPostal" name="codigoPostal" placeholder="Código Postal">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="provincia">Provincia *</label>
+                                <select id="provincia" name="provinciaNombre">
+                                    {{#each provincias}}
+                                        <option value="{{this.nombre}}">{{this.nombre}}</option>
+                                    {{/each}}
+                                </select>
+                            </div>
+
+                            <div class="row">
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label for="id">Tipo de Documento *</label>
+                                        <select id="id" name="id" required onchange="toggleDocumentNumber()" required>
+                                            <option value="none">No posee</option>
+                                            <option value="DNI">Documento de Identidad</option>
+                                            <option value="LE">Libreta de Enrolamiento</option>
+                                            <option value="LC">Libreta Cívica</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="form-group" id="id-number-group" style="display: none;">
+                                        <label for="numeroDocumento">Número de Documento *</label>
+                                        <input type="number" id="numeroDocumento" name="numeroDocumento" placeholder="Número de Documento">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="container text-center">
+                    <input type="hidden" id="cantidadDePantallasAMostrar" name="cantidadDePantallasAMostrar" value="{{cantidadDePantallasAMostrar}}">
+                    <button type="submit" class="btn btn-primary-alt">Confirmar registro</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+{{/partial}}
+{{#partial "scripts"}}
+    <script src="js/verificar_fecha_nacimiento.js"></script>
+    <script>
+        function toggleDocumentNumber() {
+            const documentType = document.getElementById('id').value;
+            const documentNumberGroup = document.getElementById('id-number-group');
+
+            if (documentType === 'none') {
+                documentNumberGroup.style.display = 'none';
+                document.getElementById('id-number').required = false;
+            } else {
+                documentNumberGroup.style.display = 'block';
+                document.getElementById('id-number').required = true;
+            }
+        }
+    </script>
+
+{{/partial}}
+{{>templates/bases/base}}
